@@ -7,18 +7,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vanilla Weather App</title>
 </head>
+
 <body>
-  <div>
+  <div id="header">
     <h1>EurOrbit</h1>
-    <p>European Weather Forecast</p>
-    <p>Powered by <span>7Timer!</span></p>
+    <h2>European Weather Forecast</h2>
+    <p>Powered by <a href="https://www.7timer.info/">7Timer!</a></p>
   </div>
-  <label>
+
+  <label id="city-select">
     <span>Choose a city:</span>
-    <select id="city-select">
-      <option value="">--Please choose a city--</option>
+    <select>
+      <option disabled selected>--Please choose a city--</option>
     </select>
   </label>
+
+  <div id="toggle-unit"></div>
+
+  <main>
+    <!-- #region: Spinner -->
+    <div class="lds-spinner">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+    <!-- #endregion -->
+    <div id="cards"></div>
+  </main>
 
   <div id="app"></div>
   <script type="module" src="/src/main.ts"></script>
