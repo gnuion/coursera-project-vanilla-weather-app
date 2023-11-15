@@ -19,13 +19,31 @@ type WeatherData = {
 
 type Unit = 'fahrenheit' | 'celsius'
 
+const weatherTypes: Map<string, string> = new Map([
+  ['clear', 'Clear' ],
+  ['cloudy', 'Cloudy' ],
+  ['fog', 'Fog'],
+  ['humid', 'Humid' ],
+  ['ishower', 'Isolated shower' ],
+  ['lightrain', 'Light rain'],
+  ['lightsnow', 'Light snow' ],
+  ['mcloudy', 'Mostly cloudy' ],
+  ['oshower', 'Occasional showers	'],
+  ['pcloudy', 'Partly cloudy' ],
+  ['rain', 'Rain'],
+  ['rainsnow', 'Mixed' ],
+  ['snow', 'Snow'],
+  ['tsrain', 'Thunderstorm'],
+  ['tstorm', 'Thunderstorm possible'],
+  ['windy', 'Windy'],
+]);
+
 let dataseries: WeatherData[];
 let unit: Unit = 'celsius'
+
 const cardsEl = document.querySelector<HTMLDivElement>('#cards')!
 const spinner = document.querySelector<HTMLDivElement>('.lds-spinner')!
 const toggleUnitEl = document.querySelector("#toggle-unit")!
-
-
 
 // #region populate cities in options
 const populateCities = () => {
@@ -61,13 +79,12 @@ for (let [key, value] of cities) {
 }
 // #endregion
 
-
-
 const fetchWeather = async (longitude: string, latitude: string) => {
   const url = `https://www.7timer.info/bin/civillight.php?lon=${longitude}&lat=${latitude}&ac=0&unit=metric&output=json&tzshift=0"`
   const dataseries = await fetch(url).then(data => data.json()).then(json => {
     return json.dataseries as WeatherData[]
   })
+  console.log(dataseries)
   return dataseries
 }
 
@@ -89,7 +106,10 @@ const repopulateCards = () => {
   if (!dataseries) { return }
   dataseries.forEach(data => {
     let max, min;
-    const { weather, temp2m } = data
+    const {  temp2m } = data
+    let weather = data.weather;
+    let weatherLabel = weatherTypes.get(weather);
+
     if (unit == 'fahrenheit') {
       max = (temp2m.max * 9 / 5) + 32
       min = (temp2m.min * 9 / 5) + 32
@@ -104,7 +124,7 @@ const repopulateCards = () => {
       <div style="overflow:hidden; width:64px;">
         <img src="/images/${weather}.png"/>
       </div>
-      <p>${weather}</p>
+      <p>${weatherLabel ?? weather}</p>
       <p>High: ${max} ${units[unit].symbol}</p>
       <p>Low: ${min} ${units[unit].symbol}</p>
     </div>`
@@ -178,4 +198,4 @@ toggleUnitEl.innerHTML = `
 <span class="toggler"></span>
 `
 toggleUnitEl.children[1].addEventListener('click', toggleUnit)
-toggleUnit()
+renderUnit()
