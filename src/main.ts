@@ -20,18 +20,18 @@ type WeatherData = {
 type Unit = 'fahrenheit' | 'celsius'
 
 const weatherTypes: Map<string, string> = new Map([
-  ['clear', 'Clear' ],
-  ['cloudy', 'Cloudy' ],
+  ['clear', 'Clear'],
+  ['cloudy', 'Cloudy'],
   ['fog', 'Fog'],
-  ['humid', 'Humid' ],
-  ['ishower', 'Isolated shower' ],
+  ['humid', 'Humid'],
+  ['ishower', 'Isolated shower'],
   ['lightrain', 'Light rain'],
-  ['lightsnow', 'Light snow' ],
-  ['mcloudy', 'Mostly cloudy' ],
+  ['lightsnow', 'Light snow'],
+  ['mcloudy', 'Mostly cloudy'],
   ['oshower', 'Occasional showers	'],
-  ['pcloudy', 'Partly cloudy' ],
+  ['pcloudy', 'Partly cloudy'],
   ['rain', 'Rain'],
-  ['rainsnow', 'Mixed' ],
+  ['rainsnow', 'Mixed'],
   ['snow', 'Snow'],
   ['tsrain', 'Thunderstorm'],
   ['tstorm', 'Thunderstorm possible'],
@@ -40,6 +40,7 @@ const weatherTypes: Map<string, string> = new Map([
 
 let dataseries: WeatherData[];
 let unit: Unit = 'celsius'
+let cities: Map<number, City> = new Map()
 
 const cardsEl = document.querySelector<HTMLDivElement>('#cards')!
 const spinner = document.querySelector<HTMLDivElement>('.lds-spinner')!
@@ -47,10 +48,9 @@ const toggleUnitEl = document.querySelector("#toggle-unit")!
 
 // #region populate cities in options
 const populateCities = () => {
-  return fetch("/city_coordinates.csv")
+  return fetch(`${import.meta.env.BASE_URL}/city_coordinates.csv`)
     .then(response => response.text())
     .then(csvData => {
-      let cities: Map<number, City> = new Map()
       const rows = csvData.split('\n').entries()
       rows.next(); // Skip first row
       while (true) {
@@ -66,17 +66,31 @@ const populateCities = () => {
         }
         cities.set(key, city)
       }
-      return cities
     })
 }
-const cities = await populateCities();
-const citySelect = document.querySelector<HTMLDivElement>('#city-select select')!
-for (let [key, value] of cities) {
-  const optionEl = document.createElement('option')
-  optionEl.value = String(key)
-  optionEl.text = value.city + ', ' + value.country
-  citySelect.appendChild(optionEl)
-}
+(async function () {
+  await populateCities()
+  const citySelect = document.querySelector<HTMLDivElement>('#city-select select')!
+  for (let [key, value] of cities) {
+    const optionEl = document.createElement('option')
+    optionEl.value = String(key)
+    optionEl.text = value.city + ', ' + value.country
+    citySelect.appendChild(optionEl)
+  }
+  citySelect.addEventListener('change', async (event) => {
+    const key = parseInt((event.target as HTMLSelectElement).value)
+    if (!key) return;
+    let city = cities.get(key);
+    if (!city) return;
+    spinner.style.display = 'block'
+    cardsEl.style.display = 'none'
+    dataseries = await fetchWeather(city.longitude, city.latitude)
+    repopulateCards()
+    spinner.style.display = 'none'
+    cardsEl.style.display = 'flex'
+  })
+
+}());
 // #endregion
 
 const fetchWeather = async (longitude: string, latitude: string) => {
@@ -88,25 +102,12 @@ const fetchWeather = async (longitude: string, latitude: string) => {
   return dataseries
 }
 
-citySelect.addEventListener('change', async (event) => {
-  const key = parseInt((event.target as HTMLSelectElement).value)
-  if (!key) return;
-  let city = cities.get(key);
-  if (!city) return;
-  spinner.style.display = 'block'
-  cardsEl.style.display = 'none'
-  dataseries = await fetchWeather(city.longitude, city.latitude)
-  repopulateCards()
-  spinner.style.display = 'none'
-  cardsEl.style.display = 'flex'
-})
-
 const repopulateCards = () => {
   cardsEl.innerHTML = '';
   if (!dataseries) { return }
   dataseries.forEach(data => {
     let max, min;
-    const {  temp2m } = data
+    const { temp2m } = data
     let weather = data.weather;
     let weatherLabel = weatherTypes.get(weather);
 
@@ -122,7 +123,7 @@ const repopulateCards = () => {
     <div class="card">
       <p>${date}</p>
       <div style="overflow:hidden; width:64px;">
-        <img src="/images/${weather}.png"/>
+        <img src="${import.meta.env.BASE_URL}/images/${weather}.png"/>
       </div>
       <p>${weatherLabel ?? weather}</p>
       <p>High: ${max} ${units[unit].symbol}</p>
@@ -198,4 +199,5 @@ toggleUnitEl.innerHTML = `
 <span class="toggler"></span>
 `
 toggleUnitEl.children[1].addEventListener('click', toggleUnit)
+
 renderUnit()
